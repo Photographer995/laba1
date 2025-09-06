@@ -1,15 +1,4 @@
 package demo.parallel;
-
-/**
- * Complex number class used in Mandelbrot demo.
- * Expanded with additional non-mutating operations for safe usage
- * in new fractal formulas and unit testing.
- *
- * Note: original methods plus(...) and times(...) mutate 'this' (kept for
- * backward compatibility). New methods (minus, scale, conjugate, divide,
- * timesCopy, pow, abs, lengthSQ) return new Complex instances and do not
- * change the current object.
- */
 public class Complex {
 
     private double re;   // real part
@@ -20,26 +9,14 @@ public class Complex {
         this.im = imag;
     }
 
-    /* ------------------------------
-       Original (mutating) API kept
-       ------------------------------ */
 
-    /**
-     * Add operation (mutates this).
-     * @param b summand
-     * @return this (modified)
-     */
     public Complex plus(Complex b) {
         re += b.re;
         im += b.im;
         return this;
     }
 
-    /**
-     * Multiply operation (mutates this).
-     * @param b multiplier
-     * @return this (modified)
-     */
+  
     public Complex times(Complex b) {
         double real = re * b.re - im * b.im;
         double imag = re * b.im + im * b.re;
@@ -48,19 +25,12 @@ public class Complex {
         return this;
     }
 
-    /**
-     * Square of length (non-mutating).
-     * @return re*re + im*im
-     */
+ 
     public double lengthSQ() {
         return re * re + im * im;
     }
 
-    /* ------------------------------
-       New non-mutating API
-       ------------------------------ */
-
-    /** Return new Complex = this - b */
+  
     public Complex minus(Complex b) {
         return new Complex(re - b.re, im - b.im);
     }
@@ -96,18 +66,10 @@ public class Complex {
         return new Complex(re, im);
     }
 
-    /**
-     * Non-mutating multiply (returns new Complex = this * b)
-     * Useful to avoid side-effects when computing powers.
-     */
     public Complex timesCopy(Complex b) {
         return new Complex(re * b.re - im * b.im, re * b.im + im * b.re);
     }
 
-    /**
-     * Fast integer power: returns new Complex = this^n (n >= 0).
-     * Implemented via binary exponentiation and uses timesCopy (non-mutating).
-     */
     public Complex pow(int n) {
         if (n < 0) {
             throw new IllegalArgumentException("Negative exponent not supported");
@@ -124,10 +86,7 @@ public class Complex {
         return result;
     }
 
-    /* ------------------------------
-       Accessors (helpful for tests / usage)
-       ------------------------------ */
-
+ 
     public double re() { return re; }
     public double im() { return im; }
 
@@ -136,6 +95,5 @@ public class Complex {
         return String.format("(%f%+fi)", re, im);
     }
 
-    /* equals/hashCode optional - not strictly required for tests,
-       but can be added if needed. */
+  
 }
