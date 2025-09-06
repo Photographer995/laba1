@@ -1,69 +1,33 @@
-/*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- *   - Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *
- *   - Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *
- *   - Neither the name of Oracle nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
- * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 package demo.parallel;
 
-
 /**
- * A complex number is a number that can be expressed in the form a + b * i, where
- * a and b are real numbers and i is the imaginary unit, which satisfies the
- * equation i ^ 2 = -1. a is the real part and b is the imaginary part of the
- * complex number.
- * <p><i>
- * This source code is provided to illustrate the usage of a given feature
- * or technique and has been deliberately simplified. Additional steps
- * required for a production-quality application, such as security checks,
- * input validation and proper error handling, might not be present in
- * this sample code.</i>
- * @author Alexander Kouznetsov, Tristan Yan
+ * Complex number class used in Mandelbrot demo.
+ * Expanded with additional non-mutating operations for safe usage
+ * in new fractal formulas and unit testing.
+ *
+ * Note: original methods plus(...) and times(...) mutate 'this' (kept for
+ * backward compatibility). New methods (minus, scale, conjugate, divide,
+ * timesCopy, pow, abs, lengthSQ) return new Complex instances and do not
+ * change the current object.
  */
 public class Complex {
-    
-    private double re;   // the real part
-    private double im;   // the imaginary part
 
-    /** 
-     * create a new object with the given real and imaginary parts
-     * 
-     * @param real a complex number real part
-     * @param imag a complex number imaginary part 
-     */
+    private double re;   // real part
+    private double im;   // imaginary part
+
     public Complex(double real, double imag) {
-        re = real;
-        im = imag;
+        this.re = real;
+        this.im = imag;
     }
 
+    /* ------------------------------
+       Original (mutating) API kept
+       ------------------------------ */
+
     /**
-     * Add operation.
+     * Add operation (mutates this).
      * @param b summand
-     * @return this Complex object whose value is (this + b)
+     * @return this (modified)
      */
     public Complex plus(Complex b) {
         re += b.re;
@@ -72,25 +36,106 @@ public class Complex {
     }
 
     /**
-     * Multiply operation.
-     * @param  b multiplier
-     * @return this Complex object whose value is this * b
+     * Multiply operation (mutates this).
+     * @param b multiplier
+     * @return this (modified)
      */
     public Complex times(Complex b) {
-        Complex a = this;
-        double real = a.re * b.re - a.im * b.im;
-        double imag = a.re * b.im + a.im * b.re;
+        double real = re * b.re - im * b.im;
+        double imag = re * b.im + im * b.re;
         re = real;
         im = imag;
         return this;
     }
 
     /**
-     * Square of Complex object's length, we're using square of length to 
-     * eliminate the computation of square root
-     * @return square of length
-    */
+     * Square of length (non-mutating).
+     * @return re*re + im*im
+     */
     public double lengthSQ() {
         return re * re + im * im;
     }
+
+    /* ------------------------------
+       New non-mutating API
+       ------------------------------ */
+
+    /** Return new Complex = this - b */
+    public Complex minus(Complex b) {
+        return new Complex(re - b.re, im - b.im);
+    }
+
+    /** Return new Complex = this * scalar */
+    public Complex scale(double k) {
+        return new Complex(re * k, im * k);
+    }
+
+    /** Return new Complex = conjugate(this) */
+    public Complex conjugate() {
+        return new Complex(re, -im);
+    }
+
+    /** Return modulus (abs) */
+    public double abs() {
+        return Math.hypot(re, im);
+    }
+
+    /** Return new Complex = this / b */
+    public Complex divide(Complex b) {
+        double denom = b.re * b.re + b.im * b.im;
+        if (denom == 0) {
+            throw new ArithmeticException("Division by zero in complex divide");
+        }
+        double real = (re * b.re + im * b.im) / denom;
+        double imag = (im * b.re - re * b.im) / denom;
+        return new Complex(real, imag);
+    }
+
+    /** Return a copy of this complex */
+    public Complex copy() {
+        return new Complex(re, im);
+    }
+
+    /**
+     * Non-mutating multiply (returns new Complex = this * b)
+     * Useful to avoid side-effects when computing powers.
+     */
+    public Complex timesCopy(Complex b) {
+        return new Complex(re * b.re - im * b.im, re * b.im + im * b.re);
+    }
+
+    /**
+     * Fast integer power: returns new Complex = this^n (n >= 0).
+     * Implemented via binary exponentiation and uses timesCopy (non-mutating).
+     */
+    public Complex pow(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("Negative exponent not supported");
+        }
+        if (n == 0) return new Complex(1.0, 0.0);
+        Complex base = this.copy();
+        Complex result = new Complex(1.0, 0.0);
+        int e = n;
+        while (e > 0) {
+            if ((e & 1) == 1) result = result.timesCopy(base);
+            base = base.timesCopy(base);
+            e >>= 1;
+        }
+        return result;
+    }
+
+    /* ------------------------------
+       Accessors (helpful for tests / usage)
+       ------------------------------ */
+
+    public double re() { return re; }
+    public double im() { return im; }
+
+    @Override
+    public String toString() {
+        return String.format("(%f%+fi)", re, im);
+    }
+
+    /* equals/hashCode optional - not strictly required for tests,
+       but can be added if needed. */
 }
